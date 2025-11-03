@@ -1,4 +1,4 @@
-import { apiGet } from './client.js';
+import { apiGet, apiPost } from './client.js';
 
 export const fetchLlmStatus = async () => {
   const result = await apiGet('/api/llms');
@@ -29,4 +29,18 @@ export const fetchManuals = async (params = {}) => {
   const search = query.toString();
   const result = await apiGet(`/api/manuals${search ? `?${search}` : ''}`);
   return Array.isArray(result?.items) ? result.items : [];
+};
+
+export const saveManual = async ({ taskType, llmName, content, version }) => {
+  const payload = {
+    taskType,
+    llmName: llmName ?? null,
+    content,
+  };
+
+  if (version) {
+    payload.version = version;
+  }
+
+  return apiPost('/api/manuals', payload);
 };

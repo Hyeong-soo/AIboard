@@ -12,9 +12,13 @@ const requestApprovals = async (text) => {
 
   const tasks = llmServices.map(async (service) => {
     const startedAt = performance.now();
+    const timeoutMs = Number.isFinite(service.timeoutMs)
+      ? service.timeoutMs
+      : llmRequestTimeoutMs;
     console.log('[approval-service] Sending request', {
       service: service.name,
       url: service.url,
+      timeoutMs,
     });
 
     try {
@@ -22,7 +26,7 @@ const requestApprovals = async (text) => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ pdfText: text }),
-        timeoutMs: llmRequestTimeoutMs,
+        timeoutMs,
       });
 
       const payload = await readResponseBody(response);
@@ -50,7 +54,7 @@ const requestApprovals = async (text) => {
       const durationMs = Math.round(performance.now() - startedAt);
       const isAbortError = error.name === 'AbortError';
       const message = isAbortError
-        ? `Request to ${service.name} timed out after ${llmRequestTimeoutMs}ms`
+        ? `Request to ${service.name} timed out after ${timeoutMs}ms`
         : error.message;
 
       const failureResult = {

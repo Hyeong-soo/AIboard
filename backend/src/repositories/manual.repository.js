@@ -41,7 +41,45 @@ const getLatestManual = async (taskType, llmName) => {
   return manual ? mapManual(manual) : null;
 };
 
+const createManualVersion = async ({ taskType, llmName = null, content, version }) => {
+  const resolvedTaskType = taskType;
+  const resolvedLlmName =
+    llmName === undefined || llmName === null || `${llmName}`.trim() === ''
+      ? null
+      : `${llmName}`.trim();
+  const resolvedVersion =
+    version && `${version}`.trim().length > 0
+      ? `${version}`.trim()
+      : `v${new Date().toISOString().replace(/[:.]/g, '-')}`;
+
+  const manual = await prisma.$transaction(async (tx) => {
+    await tx.reviewManual.updateMany({
+      where: {
+        taskType: resolvedTaskType,
+        llmName: resolvedLlmName,
+        isActive: true,
+      },
+      data: { isActive: false },
+    });
+
+    const created = await tx.reviewManual.create({
+      data: {
+        taskType: resolvedTaskType,
+        llmName: resolvedLlmName,
+        version: resolvedVersion,
+        content,
+        isActive: true,
+      },
+    });
+
+    return created;
+  });
+
+  return mapManual(manual);
+};
+
 module.exports = {
   findManuals,
   getLatestManual,
+  createManualVersion,
 };

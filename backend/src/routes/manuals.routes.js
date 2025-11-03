@@ -5,5 +5,6 @@ const router = Router();
 
 router.get('/', manualsController.listManuals);
 router.get('/:taskType/:llmName', manualsController.getManual);
+router.post('/', manualsController.createManual);
 
 module.exports = router;

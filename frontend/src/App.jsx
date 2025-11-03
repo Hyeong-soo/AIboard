@@ -2,11 +2,13 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import LlmStatusCards from './components/LlmStatusCards.jsx';
 import DecisionTable from './components/DecisionTable.jsx';
 import DecisionDetailModal from './components/DecisionDetailModal.jsx';
+import ManualEditorModal from './components/ManualEditorModal.jsx';
 import {
   fetchDecisionDetail,
   fetchDecisionList,
   fetchLlmStatus,
   fetchManuals,
+  saveManual,
 } from './api/dashboard.js';
 
 const DEFAULT_TASK_TYPE = 'research_budget_increase';
@@ -28,6 +30,7 @@ const App = () => {
   const [selectedDecision, setSelectedDecision] = useState(null);
   const [selectedDecisionLoading, setSelectedDecisionLoading] = useState(false);
   const [detailError, setDetailError] = useState(null);
+  const [manualEditorTarget, setManualEditorTarget] = useState(null);
 
   const loadDashboardData = useCallback(async () => {
     setErrorMessage(null);
@@ -111,6 +114,48 @@ const App = () => {
     [manuals],
   );
 
+  const manualEditorLlmName = manualEditorTarget?.llmDisplayName ?? null;
+  const selectedManual =
+    manualEditorLlmName && manualsByLlm[manualEditorLlmName]
+      ? manualsByLlm[manualEditorLlmName]
+      : null;
+
+  const handleManualEditorOpen = useCallback((llm) => {
+    if (!llm) return;
+    const llmDisplayName = llm.displayName || llm.identifier;
+    setManualEditorTarget({
+      llmDisplayName,
+      llmIdentifier: llm.identifier,
+    });
+  }, []);
+
+  const handleManualEditorClose = useCallback(() => {
+    setManualEditorTarget(null);
+  }, []);
+
+  const handleManualSave = async (content, llmDisplayName) => {
+    if (!llmDisplayName) {
+      throw new Error('선택된 LLM이 없습니다.');
+    }
+
+    try {
+      await saveManual({
+        taskType: DEFAULT_TASK_TYPE,
+        llmName: llmDisplayName,
+        content,
+      });
+
+      setManualsLoading(true);
+      const refreshedManuals = await fetchManuals({ taskType: DEFAULT_TASK_TYPE });
+      setManuals(refreshedManuals);
+    } catch (error) {
+      console.error('[dashboard] Failed to save manual', error);
+      throw error;
+    } finally {
+      setManualsLoading(false);
+    }
+  };
+
   const handleRowClick = (decisionId) => {
     setSelectedDecisionId(decisionId);
   };
@@ -143,7 +188,7 @@ const App = () => {
               {llmsLoading ? '데이터를 불러오는 중...' : `참여 모델 ${llms.length}종`}
             </span>
           </div>
-          <LlmStatusCards llms={llms} loading={llmsLoading} />
+          <LlmStatusCards llms={llms} loading={llmsLoading} onCardClick={handleManualEditorOpen} />
         </section>
 
         <section className="panel">
@@ -172,6 +217,14 @@ const App = () => {
         globalManual={globalManual}
         manualsLoading={manualsLoading}
         onClose={closeModal}
+      />
+      <ManualEditorModal
+        open={manualEditorTarget !== null}
+        llmName={manualEditorLlmName}
+        manual={selectedManual}
+        loading={manualsLoading}
+        onClose={handleManualEditorClose}
+        onSubmit={(content) => handleManualSave(content, manualEditorLlmName)}
       />
     </div>
   );

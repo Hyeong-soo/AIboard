@@ -1,21 +1,19 @@
 const http = require('http');
-const fs = require('fs');
 const path = require('path');
 const dotenv = require('dotenv');
+
+const envPath = path.resolve(__dirname, '.env');
+const envResult = dotenv.config({ path: envPath });
 
 const SERVICE_NAME = process.env.SERVICE_NAME || 'claude';
 const PORT = Number(process.env.PORT) || 5001;
 const ANTHROPIC_API_URL =
   process.env.ANTHROPIC_API_URL || 'https://api.anthropic.com/v1/messages';
-const ANTHROPIC_MODEL =
-  process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-5';
+const ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-5';
 const REQUEST_TIMEOUT_MS = Number(process.env.ANTHROPIC_TIMEOUT_MS) || 20000;
 const MAX_TOKENS = Number(
   process.env.ANTHROPIC_MAX_TOKENS || process.env.ANTHROPIC_MAX_OUTPUT_TOKENS || 800,
 );
-
-const envPath = path.resolve(__dirname, '.env');
-const envResult = dotenv.config({ path: envPath });
 
 if (envResult.error && process.env.NODE_ENV !== 'production') {
   console.warn(
@@ -38,20 +36,6 @@ const sendJson = (res, statusCode, payload) => {
   res.end(JSON.stringify(payload));
 };
 
-const loadManual = () => {
-  const manualPath = path.resolve(__dirname, 'manual.md');
-  try {
-    return fs.readFileSync(manualPath, 'utf8');
-  } catch (error) {
-    log('Failed to load manual', { error: error.message, manualPath });
-    const loadError = new Error('Manual not found. Ensure manual.md exists.');
-    loadError.statusCode = 500;
-    throw loadError;
-  }
-};
-
-const manualContent = loadManual();
-
 const fetchWithTimeout = async (url, options = {}) => {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
@@ -64,6 +48,129 @@ const fetchWithTimeout = async (url, options = {}) => {
   }
 };
 
+const DEFAULT_MANUAL_LLM_NAMES = {
+  claude: 'Claude',
+};
+
+const MANUAL_SERVICE_BASE_URL =
+  process.env.MANUAL_SERVICE_BASE_URL ||
+  process.env.MANUAL_API_BASE_URL ||
+  'http://localhost:3000/api';
+const MANUAL_TASK_TYPE = process.env.MANUAL_TASK_TYPE || 'research_budget_increase';
+const MANUAL_LLM_NAME =
+  process.env.MANUAL_LLM_NAME || DEFAULT_MANUAL_LLM_NAMES[SERVICE_NAME] || null;
+const MANUAL_CACHE_TTL_MS = Number.isFinite(Number(process.env.MANUAL_CACHE_TTL_MS))
+  ? Number(process.env.MANUAL_CACHE_TTL_MS)
+  : 0;
+
+const manualCache = {
+  content: null,
+  fetchedAt: 0,
+  version: null,
+};
+
+const buildManualFetchUrl = () => {
+  if (!MANUAL_SERVICE_BASE_URL) {
+    throw new Error('MANUAL_SERVICE_BASE_URL is not configured');
+  }
+
+  const base = MANUAL_SERVICE_BASE_URL.replace(/\/$/, '');
+  const params = new URLSearchParams();
+  if (MANUAL_TASK_TYPE) params.set('taskType', MANUAL_TASK_TYPE);
+  if (MANUAL_LLM_NAME) params.set('llmName', MANUAL_LLM_NAME);
+  return `${base}/manuals${params.toString() ? `?${params}` : ''}`;
+};
+
+const getManualContent = async () => {
+  const now = Date.now();
+  if (
+    manualCache.content &&
+    MANUAL_CACHE_TTL_MS > 0 &&
+    now - manualCache.fetchedAt < MANUAL_CACHE_TTL_MS
+  ) {
+    return manualCache.content;
+  }
+
+  let url;
+  try {
+    url = buildManualFetchUrl();
+  } catch (error) {
+    log('Manual fetch configuration error', { error: error.message });
+    throw error;
+  }
+
+  let response;
+  try {
+    response = await fetchWithTimeout(url, {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+    });
+  } catch (error) {
+    if (manualCache.content) {
+      log('Manual fetch failed, using cached copy', { error: error.message });
+      return manualCache.content;
+    }
+    throw error;
+  }
+
+  if (!response.ok) {
+    const body = await response.text().catch(() => '');
+    log('Manual fetch responded with error status', {
+      status: response.status,
+      body,
+    });
+    if (manualCache.content) {
+      log('Using cached manual due to fetch failure', { status: response.status });
+      return manualCache.content;
+    }
+    const error = new Error(`Manual service responded with status ${response.status}`);
+    error.statusCode = response.status;
+    throw error;
+  }
+
+  let payload;
+  try {
+    payload = await response.json();
+  } catch (error) {
+    if (manualCache.content) {
+      log('Manual fetch returned invalid JSON, using cached copy', { error: error.message });
+      return manualCache.content;
+    }
+    throw new Error('Manual service payload was not valid JSON');
+  }
+
+  let manualEntry = null;
+  if (Array.isArray(payload?.items) && payload.items.length > 0) {
+    manualEntry = payload.items[0];
+  } else if (payload && typeof payload === 'object') {
+    manualEntry = payload;
+  }
+
+  const content = manualEntry?.content;
+  if (typeof content !== 'string' || content.trim().length === 0) {
+    if (manualCache.content) {
+      log('Manual service returned empty content, using cached copy');
+      return manualCache.content;
+    }
+    throw new Error('Manual content missing from manual service response');
+  }
+
+  if (manualCache.version && manualEntry?.version && manualCache.version !== manualEntry.version) {
+    log('Manual version updated', {
+      previous: manualCache.version,
+      next: manualEntry.version,
+    });
+  } else if (!manualCache.version && manualEntry?.version) {
+    log('Manual version set', { version: manualEntry.version });
+  }
+
+  manualCache.content = content;
+  manualCache.version = manualEntry?.version ?? null;
+  manualCache.fetchedAt = now;
+
+  return manualCache.content;
+};
+
 const evaluatePdfTextWithClaude = async (text) => {
   const apiKey = process.env.ANTHROPIC_API_KEY;
 
@@ -73,6 +180,7 @@ const evaluatePdfTextWithClaude = async (text) => {
     throw error;
   }
 
+  const manualContent = await getManualContent();
   const systemPrompt = `${manualContent}\n\nRemember: respond ONLY with the JSON object described above.`;
   const userPrompt = [
     'Document type: Research Budget Increase Request.',

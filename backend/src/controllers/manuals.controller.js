@@ -30,7 +30,47 @@ const getManual = async (req, res, next) => {
   }
 };
 
+const createManual = async (req, res, next) => {
+  try {
+    const { taskType, llmName, content, version } = req.body || {};
+    const normalizedTaskType =
+      typeof taskType === 'string' ? taskType.trim() : '';
+    const normalizedContent =
+      typeof content === 'string' ? content : null;
+    const normalizedLlmName =
+      llmName === null || llmName === undefined
+        ? null
+        : typeof llmName === 'string' && llmName.trim().length > 0
+        ? llmName.trim()
+        : null;
+    const normalizedVersion =
+      typeof version === 'string' && version.trim().length > 0
+        ? version.trim()
+        : undefined;
+
+    if (!normalizedTaskType) {
+      return res.status(400).json({ message: 'taskType is required' });
+    }
+
+    if (!normalizedContent || normalizedContent.trim().length === 0) {
+      return res.status(400).json({ message: 'content must be a non-empty string' });
+    }
+
+    const manual = await manualRepository.createManualVersion({
+      taskType: normalizedTaskType,
+      llmName: normalizedLlmName,
+      content: normalizedContent,
+      version: normalizedVersion,
+    });
+
+    return res.status(201).json(manual);
+  } catch (error) {
+    return next(error);
+  }
+};
+
 module.exports = {
   listManuals,
   getManual,
+  createManual,
 };

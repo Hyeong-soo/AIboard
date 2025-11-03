@@ -29,3 +29,18 @@ export const apiGet = async (path, options = {}) => {
   });
   return handleResponse(response);
 };
+
+export const apiPost = async (path, body, options = {}) => {
+  const headers = buildHeaders({
+    'Content-Type': 'application/json',
+    ...(options.headers || {}),
+  });
+
+  const response = await fetch(path, {
+    method: 'POST',
+    headers,
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  });
+
+  return handleResponse(response);
+};
