@@ -1,0 +1,56 @@
+[2025-11-03T11:31:04.977Z] approval error: 
+Invalid `prisma.decisionTask.create()` invocation in
+/Users/hyeong-soo/AIboard/backend/src/repositories/decision.repository.js:71:42
+
+  68 };
+  69 
+  70 const createDecision = async (data) => {
+→ 71   const task = await prisma.decisionTask.create(
+Operations timed out after `N/A`. Context: The database failed to respond to a query within the configured timeout — see https://pris.ly/d/sqlite-connector for more details. Database: /Users/hyeong-soo/AIboard/backend/prisma/./dev.db
+Stack: PrismaClientKnownRequestError: 
+Invalid `prisma.decisionTask.create()` invocation in
+/Users/hyeong-soo/AIboard/backend/src/repositories/decision.repository.js:71:42
+
+  68 };
+  69 
+  70 const createDecision = async (data) => {
+→ 71   const task = await prisma.decisionTask.create(
+Operations timed out after `N/A`. Context: The database failed to respond to a query within the configured timeout — see https://pris.ly/d/sqlite-connector for more details. Database: /Users/hyeong-soo/AIboard/backend/prisma/./dev.db
+    at _n.handleRequestError (/Users/hyeong-soo/AIboard/backend/node_modules/@prisma/client/runtime/library.js:121:7749)
+    at _n.handleAndLogRequestError (/Users/hyeong-soo/AIboard/backend/node_modules/@prisma/client/runtime/library.js:121:7057)
+    at _n.request (/Users/hyeong-soo/AIboard/backend/node_modules/@prisma/client/runtime/library.js:121:6741)
+    at async l (/Users/hyeong-soo/AIboard/backend/node_modules/@prisma/client/runtime/library.js:130:9355)
+    at async Object.createDecision (/Users/hyeong-soo/AIboard/backend/src/repositories/decision.repository.js:71:16)
+    at async approve (/Users/hyeong-soo/AIboard/backend/src/controllers/approval.controller.js:127:27)
+Request metadata: {
+  "pdfLength": 444
+}
+
+[2025-11-03T11:33:15.549Z] approval error: 
+Invalid `prisma.decisionTask.create()` invocation in
+/Users/hyeong-soo/AIboard/backend/src/repositories/decision.repository.js:71:42
+
+  68 };
+  69 
+  70 const createDecision = async (data) => {
+→ 71   const task = await prisma.decisionTask.create(
+Operations timed out after `N/A`. Context: The database failed to respond to a query within the configured timeout — see https://pris.ly/d/sqlite-connector for more details. Database: /Users/hyeong-soo/AIboard/backend/prisma/./dev.db
+Stack: PrismaClientKnownRequestError: 
+Invalid `prisma.decisionTask.create()` invocation in
+/Users/hyeong-soo/AIboard/backend/src/repositories/decision.repository.js:71:42
+
+  68 };
+  69 
+  70 const createDecision = async (data) => {
+→ 71   const task = await prisma.decisionTask.create(
+Operations timed out after `N/A`. Context: The database failed to respond to a query within the configured timeout — see https://pris.ly/d/sqlite-connector for more details. Database: /Users/hyeong-soo/AIboard/backend/prisma/./dev.db
+    at _n.handleRequestError (/Users/hyeong-soo/AIboard/backend/node_modules/@prisma/client/runtime/library.js:121:7749)
+    at _n.handleAndLogRequestError (/Users/hyeong-soo/AIboard/backend/node_modules/@prisma/client/runtime/library.js:121:7057)
+    at _n.request (/Users/hyeong-soo/AIboard/backend/node_modules/@prisma/client/runtime/library.js:121:6741)
+    at async l (/Users/hyeong-soo/AIboard/backend/node_modules/@prisma/client/runtime/library.js:130:9355)
+    at async Object.createDecision (/Users/hyeong-soo/AIboard/backend/src/repositories/decision.repository.js:71:16)
+    at async approve (/Users/hyeong-soo/AIboard/backend/src/controllers/approval.controller.js:127:27)
+Request metadata: {
+  "pdfLength": 444
+}
+

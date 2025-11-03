@@ -1,0 +1,13 @@
+{
+  "name": "claude-approval-service",
+  "version": "1.0.0",
+  "description": "Local stub for Claude approval service",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^17.2.3"
+  }
+}

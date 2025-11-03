@@ -1,0 +1,69 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model DecisionTask {
+  id            Int                 @id @default(autoincrement())
+  reference     String              @unique
+  title         String
+  requester     String
+  submittedAt   DateTime
+  summary       String
+  finalDecision String              @default("PENDING")
+  approvals     DecisionLLMResult[]
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+}
+
+model DecisionLLMResult {
+  id             Int             @id @default(autoincrement())
+  decisionTask   DecisionTask    @relation(fields: [decisionTaskId], references: [id], onDelete: Cascade)
+  decisionTaskId Int
+  llmName        String
+  decision       String           @default("PENDING")
+  confidence     Float?
+  summary        String
+  issues         String?
+  durationMs     Int?
+  createdAt      DateTime        @default(now())
+
+  @@index([decisionTaskId, llmName])
+}
+
+model LLMService {
+  id             Int        @id @default(autoincrement())
+  identifier     String     @unique
+  displayName    String
+  model          String
+  status         String     @default("HEALTHY")
+  avgLatencyMs   Int?
+  approvalRate   Float?
+  lastUpdatedAt  DateTime?
+  totalDecisions Int        @default(0)
+  approvedCount  Int        @default(0)
+  rejectedCount  Int        @default(0)
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+}
+
+model ReviewManual {
+  id        Int      @id @default(autoincrement())
+  taskType  String
+  llmName   String?
+  version   String?
+  content   String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([taskType, llmName])
+  @@unique([taskType, llmName, version], map: "ReviewManual_taskType_llmName_version_key")
+}
