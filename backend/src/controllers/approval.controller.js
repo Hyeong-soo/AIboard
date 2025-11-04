@@ -107,7 +107,7 @@ const determineFinalDecision = (approvals) => {
   const rejectCount = approvals.filter((item) => item.decision === 'REJECT').length;
 
   if (approveCount === 0 && rejectCount === 0) {
-    return 'PENDING';
+    return 'REJECT';
   }
 
   if (approveCount > rejectCount) {
@@ -118,7 +118,7 @@ const determineFinalDecision = (approvals) => {
     return 'REJECT';
   }
 
-  return 'PENDING';
+  return 'REJECT';
 };
 
 const prepareApprovalForPersistence = (approval) => {
