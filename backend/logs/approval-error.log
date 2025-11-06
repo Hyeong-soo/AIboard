@@ -54,3 +54,237 @@ Request metadata: {
   "pdfLength": 444
 }
 
+[2025-11-06T04:56:23.939Z] approval error: 
+Invalid `prisma.decisionTask.create()` invocation in
+/Users/hyeong-soo/AIboard/backend/src/repositories/decision.repository.js:91:42
+
+  88 };
+  89 
+  90 const createDecision = async (data) => {
+→ 91   const task = await prisma.decisionTask.create({
+         data: {
+           reference: "RB-20251106045618-151",
+           title: "[연구비 증액 신청] 융합설계 연구 비 증액 신청 허가를 부탁드립니 다.",
+           requester: "김형수(IT융합공학과)",
+           submittedAt: new Date("2025-11-06T04:56:18.726Z"),
+           summary: "IT융합 종합설계 실험실습재료비 증액 신청서\n신청자 정보\n성명 오종석 학번 20210131\n학과 IT융합공학과 지도교수 김형함\n교과목명 IT융합 종합설계Ⅲ: 고급설계\n신청사유\n본인은 “Safe Landing Robot”을 주제로 개인 프로젝트를 진행 중입니다. 안전\n한 이착륙 및 회전제어 시스템 구현을 위해 다음의 실습 재료가 필수적으로\n필요합니다. ...",
+           finalDecision: "APPROVE",
+           approvals: {
+             create: [
+               {
+                 llmName: "claude",
+                 decision: "APPROVE",
+                 confidence: 0.92,
+                 summary: "Complete application for Safe Landing Robot project with clear research justification. All required fields present. Materials (motor, ESC, BEC, Lipo battery, charger) are specialized components appropriate for rotation control system research, not generic consumer goods. Usage plan provides specific technical rationale for each component.",
+                 issues: "[]",
+                 durationMs: 5198,
+                 share: null
+               },
+               {
+                 llmName: "gpt",
+                 decision: "APPROVE",
+                 confidence: 0.9,
+                 summary: "The application includes all required applicant information, a clear rationale for the budget increase related to the research project, and a detailed usage plan for the materials requested.",
+                 issues: "[]",
+                 durationMs: 2509,
+                 share: null
+               },
+               {
+                 llmName: "upstage",
+                 decision: "APPROVE",
+                 confidence: 0.92,
+                 summary: "All required fields are present and justified. Materials are specialized for the described research on a 'Safe Landing Robot' with clear technical explanations.",
+                 issues: "[]",
+                 durationMs: 1468,
+                 share: null
+               }
+             ]
+           }
+         },
+         include: {
+           approvals: true
+         }
+       })
+
+Unknown argument `share`. Available options are marked with ?.
+Stack: PrismaClientValidationError: 
+Invalid `prisma.decisionTask.create()` invocation in
+/Users/hyeong-soo/AIboard/backend/src/repositories/decision.repository.js:91:42
+
+  88 };
+  89 
+  90 const createDecision = async (data) => {
+→ 91   const task = await prisma.decisionTask.create({
+         data: {
+           reference: "RB-20251106045618-151",
+           title: "[연구비 증액 신청] 융합설계 연구 비 증액 신청 허가를 부탁드립니 다.",
+           requester: "김형수(IT융합공학과)",
+           submittedAt: new Date("2025-11-06T04:56:18.726Z"),
+           summary: "IT융합 종합설계 실험실습재료비 증액 신청서\n신청자 정보\n성명 오종석 학번 20210131\n학과 IT융합공학과 지도교수 김형함\n교과목명 IT융합 종합설계Ⅲ: 고급설계\n신청사유\n본인은 “Safe Landing Robot”을 주제로 개인 프로젝트를 진행 중입니다. 안전\n한 이착륙 및 회전제어 시스템 구현을 위해 다음의 실습 재료가 필수적으로\n필요합니다. ...",
+           finalDecision: "APPROVE",
+           approvals: {
+             create: [
+               {
+                 llmName: "claude",
+                 decision: "APPROVE",
+                 confidence: 0.92,
+                 summary: "Complete application for Safe Landing Robot project with clear research justification. All required fields present. Materials (motor, ESC, BEC, Lipo battery, charger) are specialized components appropriate for rotation control system research, not generic consumer goods. Usage plan provides specific technical rationale for each component.",
+                 issues: "[]",
+                 durationMs: 5198,
+                 share: null
+               },
+               {
+                 llmName: "gpt",
+                 decision: "APPROVE",
+                 confidence: 0.9,
+                 summary: "The application includes all required applicant information, a clear rationale for the budget increase related to the research project, and a detailed usage plan for the materials requested.",
+                 issues: "[]",
+                 durationMs: 2509,
+                 share: null
+               },
+               {
+                 llmName: "upstage",
+                 decision: "APPROVE",
+                 confidence: 0.92,
+                 summary: "All required fields are present and justified. Materials are specialized for the described research on a 'Safe Landing Robot' with clear technical explanations.",
+                 issues: "[]",
+                 durationMs: 1468,
+                 share: null
+               }
+             ]
+           }
+         },
+         include: {
+           approvals: true
+         }
+       })
+
+Unknown argument `share`. Available options are marked with ?.
+    at An (/Users/hyeong-soo/AIboard/backend/node_modules/@prisma/client/runtime/library.js:114:7526)
+    at _n.handleRequestError (/Users/hyeong-soo/AIboard/backend/node_modules/@prisma/client/runtime/library.js:121:7392)
+    at _n.handleAndLogRequestError (/Users/hyeong-soo/AIboard/backend/node_modules/@prisma/client/runtime/library.js:121:7057)
+    at _n.request (/Users/hyeong-soo/AIboard/backend/node_modules/@prisma/client/runtime/library.js:121:6741)
+    at async l (/Users/hyeong-soo/AIboard/backend/node_modules/@prisma/client/runtime/library.js:130:9355)
+    at async Object.createDecision (/Users/hyeong-soo/AIboard/backend/src/repositories/decision.repository.js:91:16)
+    at async approve (/Users/hyeong-soo/AIboard/backend/src/controllers/approval.controller.js:204:27)
+Request metadata: {
+  "pdfLength": 823
+}
+
+[2025-11-06T04:58:16.402Z] approval error: 
+Invalid `prisma.decisionTask.create()` invocation in
+/Users/hyeong-soo/AIboard/backend/src/repositories/decision.repository.js:91:42
+
+  88 };
+  89 
+  90 const createDecision = async (data) => {
+→ 91   const task = await prisma.decisionTask.create({
+         data: {
+           reference: "RB-20251106045811-613",
+           title: "[연구비 증액 신청] 융합설계 연구 비 증액 신청 허가를 부탁드립니 다.",
+           requester: "김형수(IT융합공학과)",
+           submittedAt: new Date("2025-11-06T04:58:11.198Z"),
+           summary: "IT융합 종합설계 실험실습재료비 증액 신청서\n신청자 정보\n성명 오종석 학번 20210131\n학과 IT융합공학과 지도교수 김형함\n교과목명 IT융합 종합설계Ⅲ: 고급설계\n신청사유\n본인은 “Safe Landing Robot”을 주제로 개인 프로젝트를 진행 중입니다. 안전\n한 이착륙 및 회전제어 시스템 구현을 위해 다음의 실습 재료가 필수적으로\n필요합니다. ...",
+           finalDecision: "APPROVE",
+           approvals: {
+             create: [
+               {
+                 llmName: "claude",
+                 decision: "APPROVE",
+                 confidence: 0.92,
+                 summary: "Complete application for Safe Landing Robot project with clear research justification. All required fields present. Materials (motors, ESC, BEC, Lipo battery, charger) are specialized components appropriate for rotational control system research, not generic consumer goods. Usage plan provides specific technical rationale for each component.",
+                 issues: "[]",
+                 durationMs: 5200,
+                 share: "{\"x\":\"0002fffa2e424c0fe1c96076e93b636a4dd113eeaf8814a2fa5c2470d195cc13\",\"y\":\"0a2f428f36573ed8ec5f457a402173c526767c7d12470de7c77b0a66fcab27ff\"}"
+               },
+               {
+                 llmName: "gpt",
+                 decision: "APPROVE",
+                 confidence: 0.9,
+                 summary: "The request includes all required applicant information and provides a clear rationale for the budget increase related to a specific research project. The usage plan details the necessity of each item requested for the project.",
+                 issues: "[]",
+                 durationMs: 3085,
+                 share: "{\"x\":\"0c239fb69cb5422669d5148714eeb4b0f378479540939fb63076a36749471da2\",\"y\":\"0dfbff8f45bea0d7094110313976e4a35830bccd4e2b243efe9c0a2acf964f15\"}"
+               },
+               {
+                 llmName: "upstage",
+                 decision: "APPROVE",
+                 confidence: 0.95,
+                 summary: "All required fields in 신청자 정보 are present and consistent. 신청사유 clearly states the research topic and necessity of additional materials. 사용계획 lists specific components with technical justifications aligned to the project's goals. No generic consumer goods requested.",
+                 issues: "[]",
+                 durationMs: 1291,
+                 share: "{\"x\":\"0f5fe42136f7912ddad8e7c47453ae4cb8cce23ac8905746de69dbb165271f8d\",\"y\":\"083a2a2270aafad1b3fef4c55f96407743cde511afd9cd053c5cec15c2dc75b5\"}"
+               }
+             ]
+           }
+         },
+         include: {
+           approvals: true
+         }
+       })
+
+Unknown argument `share`. Available options are marked with ?.
+Stack: PrismaClientValidationError: 
+Invalid `prisma.decisionTask.create()` invocation in
+/Users/hyeong-soo/AIboard/backend/src/repositories/decision.repository.js:91:42
+
+  88 };
+  89 
+  90 const createDecision = async (data) => {
+→ 91   const task = await prisma.decisionTask.create({
+         data: {
+           reference: "RB-20251106045811-613",
+           title: "[연구비 증액 신청] 융합설계 연구 비 증액 신청 허가를 부탁드립니 다.",
+           requester: "김형수(IT융합공학과)",
+           submittedAt: new Date("2025-11-06T04:58:11.198Z"),
+           summary: "IT융합 종합설계 실험실습재료비 증액 신청서\n신청자 정보\n성명 오종석 학번 20210131\n학과 IT융합공학과 지도교수 김형함\n교과목명 IT융합 종합설계Ⅲ: 고급설계\n신청사유\n본인은 “Safe Landing Robot”을 주제로 개인 프로젝트를 진행 중입니다. 안전\n한 이착륙 및 회전제어 시스템 구현을 위해 다음의 실습 재료가 필수적으로\n필요합니다. ...",
+           finalDecision: "APPROVE",
+           approvals: {
+             create: [
+               {
+                 llmName: "claude",
+                 decision: "APPROVE",
+                 confidence: 0.92,
+                 summary: "Complete application for Safe Landing Robot project with clear research justification. All required fields present. Materials (motors, ESC, BEC, Lipo battery, charger) are specialized components appropriate for rotational control system research, not generic consumer goods. Usage plan provides specific technical rationale for each component.",
+                 issues: "[]",
+                 durationMs: 5200,
+                 share: "{\"x\":\"0002fffa2e424c0fe1c96076e93b636a4dd113eeaf8814a2fa5c2470d195cc13\",\"y\":\"0a2f428f36573ed8ec5f457a402173c526767c7d12470de7c77b0a66fcab27ff\"}"
+               },
+               {
+                 llmName: "gpt",
+                 decision: "APPROVE",
+                 confidence: 0.9,
+                 summary: "The request includes all required applicant information and provides a clear rationale for the budget increase related to a specific research project. The usage plan details the necessity of each item requested for the project.",
+                 issues: "[]",
+                 durationMs: 3085,
+                 share: "{\"x\":\"0c239fb69cb5422669d5148714eeb4b0f378479540939fb63076a36749471da2\",\"y\":\"0dfbff8f45bea0d7094110313976e4a35830bccd4e2b243efe9c0a2acf964f15\"}"
+               },
+               {
+                 llmName: "upstage",
+                 decision: "APPROVE",
+                 confidence: 0.95,
+                 summary: "All required fields in 신청자 정보 are present and consistent. 신청사유 clearly states the research topic and necessity of additional materials. 사용계획 lists specific components with technical justifications aligned to the project's goals. No generic consumer goods requested.",
+                 issues: "[]",
+                 durationMs: 1291,
+                 share: "{\"x\":\"0f5fe42136f7912ddad8e7c47453ae4cb8cce23ac8905746de69dbb165271f8d\",\"y\":\"083a2a2270aafad1b3fef4c55f96407743cde511afd9cd053c5cec15c2dc75b5\"}"
+               }
+             ]
+           }
+         },
+         include: {
+           approvals: true
+         }
+       })
+
+Unknown argument `share`. Available options are marked with ?.
+    at An (/Users/hyeong-soo/AIboard/backend/node_modules/@prisma/client/runtime/library.js:114:7526)
+    at _n.handleRequestError (/Users/hyeong-soo/AIboard/backend/node_modules/@prisma/client/runtime/library.js:121:7392)
+    at _n.handleAndLogRequestError (/Users/hyeong-soo/AIboard/backend/node_modules/@prisma/client/runtime/library.js:121:7057)
+    at _n.request (/Users/hyeong-soo/AIboard/backend/node_modules/@prisma/client/runtime/library.js:121:6741)
+    at async l (/Users/hyeong-soo/AIboard/backend/node_modules/@prisma/client/runtime/library.js:130:9355)
+    at async Object.createDecision (/Users/hyeong-soo/AIboard/backend/src/repositories/decision.repository.js:91:16)
+    at async approve (/Users/hyeong-soo/AIboard/backend/src/controllers/approval.controller.js:204:27)
+Request metadata: {
+  "pdfLength": 823
+}
+

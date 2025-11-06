@@ -11,9 +11,15 @@ if (result.error && process.env.NODE_ENV !== 'production') {
 const env = process.env.NODE_ENV || 'development';
 const port = Number(process.env.PORT) || 3000;
 const llmRequestTimeoutMs = Number(process.env.LLM_REQUEST_TIMEOUT_MS) || 10000;
+const mpcServiceUrl = process.env.MPC_SERVICE_URL || '';
+const mpcRequestTimeoutMs = Number(process.env.MPC_REQUEST_TIMEOUT_MS) || 10000;
+const mpcThreshold = Number(process.env.MPC_THRESHOLD || 0);
 
 module.exports = {
   env,
   port,
   llmRequestTimeoutMs,
+  mpcServiceUrl,
+  mpcRequestTimeoutMs,
+  mpcThreshold,
 };

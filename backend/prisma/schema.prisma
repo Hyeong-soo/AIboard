@@ -33,6 +33,7 @@ model DecisionLLMResult {
   summary        String
   issues         String?
   durationMs     Int?
+  share          String?
   createdAt      DateTime        @default(now())
 
   @@index([decisionTaskId, llmName])

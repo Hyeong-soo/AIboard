@@ -18,12 +18,6 @@ const readManual = (relativePath) => {
 const manualRecords = [
   {
     taskType: 'research_budget_increase',
-    llmName: null,
-    version: 'v2025-11-03',
-    content: '# 공통 검토 매뉴얼는 별도로 제공되지 않습니다.',
-  },
-  {
-    taskType: 'research_budget_increase',
     llmName: 'Claude',
     version: 'v2025-11-03',
     content: readManual('../llm/claude/manual.md'),

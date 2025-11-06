@@ -84,6 +84,7 @@ const createDecision = async (data) => {
           summary: approval.summary,
           issues: approval.issues ? JSON.stringify(approval.issues) : JSON.stringify([]),
           durationMs: approval.durationMs ?? null,
+          share: approval.share ? JSON.stringify(approval.share) : null,
         })),
       },
     },

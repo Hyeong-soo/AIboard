@@ -1,7 +1,9 @@
 const fs = require('fs');
 const path = require('path');
 const { requestApprovals } = require('../services/approval.service');
+const { requestSignature } = require('../services/mpc.service');
 const decisionRepository = require('../repositories/decision.repository');
+const { mpcThreshold: configuredMpcThreshold } = require('../config/env');
 
 const decodeEncodedWord = (value) => {
   const match = value.match(/^=\?([^?]+)\?([bBqQ])\?([^?]+)\?=$/);
@@ -124,6 +126,20 @@ const determineFinalDecision = (approvals) => {
 const prepareApprovalForPersistence = (approval) => {
   if (approval.success) {
     const decision = (approval.data?.decision || 'PENDING').toUpperCase();
+    const share =
+      decision === 'APPROVE' &&
+      approval.data?.share &&
+      typeof approval.data.share === 'object' &&
+      approval.data.share !== null
+        ? {
+            x: String(approval.data.share.x ?? '').trim(),
+            y: String(approval.data.share.y ?? '').trim(),
+          }
+        : null;
+    if (share && (!share.x || !share.y)) {
+      share.x = share.x || null;
+      share.y = share.y || null;
+    }
     return {
       llmName: approval.name,
       decision: decision === 'APPROVE' || decision === 'REJECT' ? decision : 'PENDING',
@@ -134,6 +150,10 @@ const prepareApprovalForPersistence = (approval) => {
         `LLM responded with status ${approval.status ?? '200'}.`,
       issues: Array.isArray(approval.data?.issues) ? approval.data.issues : [],
       durationMs: approval.durationMs,
+      share:
+        share && share.x && share.y
+          ? { x: share.x, y: share.y }
+          : null,
     };
   }
 
@@ -144,6 +164,7 @@ const prepareApprovalForPersistence = (approval) => {
     summary: approval.error || 'LLM request failed',
     issues: approval.error ? [approval.error] : [],
     durationMs: approval.durationMs,
+    share: null,
   };
 };
 
@@ -182,6 +203,45 @@ const approve = async (req, res, next) => {
     const approvalsForDb = approvalResults.map(prepareApprovalForPersistence);
     const decision = determineFinalDecision(approvalsForDb);
 
+    const sharesForMpc = approvalsForDb
+      .filter(
+        (approval) =>
+          approval.decision === 'APPROVE' &&
+          approval.share &&
+          approval.share.x &&
+          approval.share.y,
+      )
+      .map((approval) => [approval.share.x, approval.share.y]);
+
+    let signaturePayload = null;
+    let signatureError = null;
+
+    const configuredThreshold =
+      Number.isFinite(configuredMpcThreshold) && configuredMpcThreshold > 0
+        ? configuredMpcThreshold
+        : 0;
+    const effectiveThreshold =
+      configuredThreshold > 0 ? configuredThreshold : sharesForMpc.length;
+
+    if (sharesForMpc.length > 0 && effectiveThreshold > 0) {
+      if (sharesForMpc.length >= effectiveThreshold) {
+        try {
+          signaturePayload = await requestSignature({
+            message: textCandidate,
+            shares: sharesForMpc,
+            threshold: effectiveThreshold,
+          });
+        } catch (mpcError) {
+          console.error('[approval] MPC signature request failed', {
+            message: mpcError.message,
+          });
+          signatureError = mpcError.message;
+        }
+      } else {
+        signatureError = `Insufficient shares for MPC signature (have ${sharesForMpc.length}, need ${effectiveThreshold})`;
+      }
+    }
+
     const savedDecision = await decisionRepository.createDecision({
       reference: normalized.reference,
       title: normalized.title,
@@ -192,10 +252,18 @@ const approve = async (req, res, next) => {
       approvals: approvalsForDb,
     });
 
+    const sanitizedDecisionTask = {
+      ...savedDecision,
+      approvals: savedDecision.approvals.map(({ share: _share, ...rest }) => rest),
+    };
+    const responseApprovals = approvalsForDb.map(({ share: _share, ...rest }) => rest);
+
     return res.status(201).json({
       decision,
-      decisionTask: savedDecision,
-      approvals: approvalsForDb,
+      decisionTask: sanitizedDecisionTask,
+      approvals: responseApprovals,
+      signature: signaturePayload,
+      signatureError,
     });
   } catch (error) {
     const logEntry = `[${new Date().toISOString()}] approval error: ${
