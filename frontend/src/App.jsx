@@ -109,11 +109,6 @@ const App = () => {
     return map;
   }, [manuals]);
 
-  const globalManual = useMemo(
-    () => manuals.find((manual) => manual.llmName === null) || null,
-    [manuals],
-  );
-
   const manualEditorLlmName = manualEditorTarget?.llmDisplayName ?? null;
   const selectedManual =
     manualEditorLlmName && manualsByLlm[manualEditorLlmName]
@@ -214,7 +209,6 @@ const App = () => {
         loading={selectedDecisionLoading}
         error={detailError}
         manualsByLlm={manualsByLlm}
-        globalManual={globalManual}
         manualsLoading={manualsLoading}
         onClose={closeModal}
       />

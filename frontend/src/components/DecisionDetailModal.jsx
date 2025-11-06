@@ -27,7 +27,6 @@ const DecisionDetailModal = ({
   loading,
   error,
   manualsByLlm = {},
-  globalManual = null,
   manualsLoading = false,
   onClose,
 }) => {
@@ -123,7 +122,8 @@ const DecisionDetailModal = ({
               )}
               <ul className="modal__approvals">
                 {decision.approvals.map((approval) => {
-                  const manual = manualsByLlm[approval.llmName] || globalManual;
+                  const manual = manualsByLlm[approval.llmName];
+                  const share = approval.share;
                   return (
                     <li key={`${approval.llmName}-${approval.id ?? ''}`} className="modal__approval">
                       <header>
@@ -151,8 +151,14 @@ const DecisionDetailModal = ({
                       )}
                       {manual && (
                         <details className="modal__manual">
-                          <summary>{manual.llmName ? 'LLM 전용 매뉴얼' : '공통 검토 매뉴얼'}</summary>
+                          <summary>LLM 전용 매뉴얼</summary>
                           <pre>{manual.content}</pre>
+                        </details>
+                      )}
+                      {share?.x && share?.y && (
+                        <details className="modal__share">
+                          <summary>복구용 부분키</summary>
+                          <pre>{`x: ${share.x}\ny: ${share.y}`}</pre>
                         </details>
                       )}
                     </li>

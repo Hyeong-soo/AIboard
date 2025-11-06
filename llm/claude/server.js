@@ -333,7 +333,16 @@ const server = http.createServer(async (req, res) => {
       const preview = text.slice(0, 100);
       log('Received pdfText preview', { preview });
 
-      const result = await evaluatePdfTextWithClaude(text);
+  const result = await evaluatePdfTextWithClaude(text);
+      const share =
+        result.decision === 'APPROVE' &&
+        process.env.SSS_SHARE_X &&
+        process.env.SSS_SHARE_Y
+          ? {
+              x: process.env.SSS_SHARE_X,
+              y: process.env.SSS_SHARE_Y,
+            }
+          : null;
 
       return sendJson(res, 200, {
         service: SERVICE_NAME,
@@ -343,6 +352,7 @@ const server = http.createServer(async (req, res) => {
         issues: result.issues,
         receivedTextLength: text.length,
         evaluatedAt: new Date().toISOString(),
+        share,
         raw: result.raw,
       });
     } catch (error) {

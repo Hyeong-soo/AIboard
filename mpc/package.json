@@ -1,0 +1,21 @@
+{
+  "name": "mpc",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "dev": "node --watch --experimental-wasm-modules src/server.js",
+    "start": "node --experimental-wasm-modules src/server.js",
+    "test": "node --experimental-wasm-modules --test"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^5.1.0",
+    "sssui_wasm": "^0.1.8",
+    "tweetnacl": "^1.0.3",
+    "zod": "^4.1.12"
+  }
+}

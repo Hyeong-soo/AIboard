@@ -464,6 +464,32 @@ body {
   overflow-y: auto;
 }
 
+.modal__share {
+  margin: 8px 0 0;
+  padding: 12px 14px;
+  background: rgba(13, 17, 23, 0.9);
+  border-radius: 10px;
+  border: 1px solid rgba(249, 115, 22, 0.25);
+}
+
+.modal__share summary {
+  cursor: pointer;
+  color: rgba(249, 115, 22, 0.9);
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.modal__share pre {
+  margin: 12px 0 0;
+  padding: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: rgba(255, 237, 213, 0.92);
+  font-family: 'Fira Code', 'Source Code Pro', monospace;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
 .manual-editor__form {
   display: flex;
   flex-direction: column;
