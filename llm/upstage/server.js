@@ -1,9 +1,34 @@
+const fs = require('fs');
 const http = require('http');
 const path = require('path');
 const dotenv = require('dotenv');
 
-const envPath = path.resolve(__dirname, '.env');
-const envResult = dotenv.config({ path: envPath });
+const resolveEnvFileName = () => {
+  if (process.env.ENV_FILE) {
+    return process.env.ENV_FILE;
+  }
+  return process.env.NODE_ENV === 'production' ? '.env.docker' : '.env.dev';
+};
+
+const envCandidates = Array.from(new Set([resolveEnvFileName(), '.env'].filter(Boolean)));
+const resolveCandidatePath = (candidate) =>
+  path.isAbsolute(candidate) ? candidate : path.resolve(__dirname, candidate);
+
+let envLoadWarning = null;
+const loadedEnvFile = envCandidates.find((candidate) => {
+  const candidatePath = resolveCandidatePath(candidate);
+  if (!fs.existsSync(candidatePath)) {
+    return false;
+  }
+  dotenv.config({ path: candidatePath });
+  return true;
+});
+
+if (!loadedEnvFile && process.env.NODE_ENV !== 'production') {
+  envLoadWarning = `Environment file not found. Checked: ${envCandidates
+    .map((candidate) => resolveCandidatePath(candidate))
+    .join(', ')}`;
+}
 
 const SERVICE_NAME = process.env.SERVICE_NAME || 'upstage';
 const PORT = Number(process.env.PORT) || 5003;
@@ -13,10 +38,8 @@ const UPSTAGE_MODEL = process.env.UPSTAGE_MODEL || 'solar-pro2-250909';
 const REQUEST_TIMEOUT_MS = Number(process.env.UPSTAGE_TIMEOUT_MS) || 20000;
 const MAX_TOKENS = Number(process.env.UPSTAGE_MAX_TOKENS || 800);
 
-if (envResult.error && process.env.NODE_ENV !== 'production') {
-  console.warn(
-    `[${SERVICE_NAME}] Warning: Failed to load ${envPath}. Using process environment variables only.`,
-  );
+if (envLoadWarning) {
+  console.warn(`[${SERVICE_NAME}] ${envLoadWarning}. Falling back to runtime environment only.`);
 }
 
 const log = (message, meta) => {

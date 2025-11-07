@@ -1,0 +1,74 @@
+services:
+  backend:
+    build:
+      context: ./backend
+    env_file:
+      - backend/.env.docker
+    ports:
+      - "3000:3000"
+    depends_on:
+      mpc:
+        condition: service_started
+      llm-claude:
+        condition: service_started
+      llm-gpt:
+        condition: service_started
+      llm-upstage:
+        condition: service_started
+      n8n:
+        condition: service_started
+    volumes:
+      - backend-data:/data
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_BASE_URL: /api
+        VITE_BUILD_MODE: docker
+    ports:
+      - "8080:80"
+    depends_on:
+      backend:
+        condition: service_started
+
+  mpc:
+    build:
+      context: ./mpc
+    env_file:
+      - mpc/.env.docker
+    ports:
+      - "4000:4000"
+
+  llm-claude:
+    build:
+      context: ./llm/claude
+    env_file:
+      - llm/claude/.env.docker
+
+  llm-gpt:
+    build:
+      context: ./llm/gpt
+    env_file:
+      - llm/gpt/.env.docker
+
+  llm-upstage:
+    build:
+      context: ./llm/upstage
+    env_file:
+      - llm/upstage/.env.docker
+
+  n8n:
+    image: n8nio/n8n:1.117.3
+    environment:
+      - N8N_BASIC_AUTH_ACTIVE=false
+      - DB_TYPE=sqlite
+      - DB_SQLITE_PATH=/home/node/.n8n/database.sqlite
+      - N8N_PORT=5678
+    ports:
+      - "5678:5678"
+    volumes:
+      - /Users/hyeong-soo/.n8n:/home/node/.n8n
+
+volumes:
+  backend-data:

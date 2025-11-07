@@ -1,3 +1,6 @@
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import express from 'express';
 import { z } from 'zod';
 import {
@@ -6,6 +9,62 @@ import {
   signMessage,
   verifyDetachedSignature,
 } from './sssService.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const projectRoot = path.resolve(__dirname, '..');
+
+const resolveEnvCandidates = () => {
+  if (process.env.ENV_FILE) {
+    return [process.env.ENV_FILE, '.env'];
+  }
+  const defaultFile = process.env.NODE_ENV === 'production' ? '.env.docker' : '.env.dev';
+  return [defaultFile, '.env'];
+};
+
+const applyEnvFile = (filePath) => {
+  const contents = fs.readFileSync(filePath, 'utf8');
+  contents.split(/\r?\n/).forEach((line) => {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) {
+      return;
+    }
+    const normalized = trimmed.startsWith('export ') ? trimmed.slice(7) : trimmed;
+    const separatorIndex = normalized.indexOf('=');
+    if (separatorIndex === -1) {
+      return;
+    }
+    const key = normalized.slice(0, separatorIndex).trim();
+    if (!key || Object.prototype.hasOwnProperty.call(process.env, key)) {
+      return;
+    }
+    const rawValue = normalized.slice(separatorIndex + 1).trim();
+    const value = rawValue.replace(/^['"]|['"]$/g, '');
+    process.env[key] = value;
+  });
+};
+
+const envCandidates = Array.from(new Set(resolveEnvCandidates().filter(Boolean)));
+const loadedEnvFile = envCandidates.find((candidate) => {
+  const filePath = path.isAbsolute(candidate)
+    ? candidate
+    : path.resolve(projectRoot, candidate);
+  if (!fs.existsSync(filePath)) {
+    return false;
+  }
+  applyEnvFile(filePath);
+  return true;
+});
+
+if (!loadedEnvFile && process.env.NODE_ENV !== 'production') {
+  console.warn(
+    `[env] MPC service could not find an env file. Checked: ${envCandidates
+      .map((candidate) =>
+        path.isAbsolute(candidate) ? candidate : path.resolve(projectRoot, candidate),
+      )
+      .join(', ')}`,
+  );
+}
 
 const PORT = Number(process.env.PORT) || 4000;
 

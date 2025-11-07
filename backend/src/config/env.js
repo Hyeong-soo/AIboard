@@ -1,11 +1,36 @@
+const fs = require('fs');
 const path = require('path');
 const dotenv = require('dotenv');
 
-const envFile = path.resolve(process.cwd(), '.env');
-const result = dotenv.config({ path: envFile });
+const resolveEnvFileName = () => {
+  if (process.env.ENV_FILE) {
+    return process.env.ENV_FILE;
+  }
+  return process.env.NODE_ENV === 'production' ? '.env.docker' : '.env.dev';
+};
 
-if (result.error && process.env.NODE_ENV !== 'production') {
-  console.warn(`Environment file not found at ${envFile}, falling back to process defaults.`);
+const envCandidates = Array.from(
+  new Set([resolveEnvFileName(), '.env'].filter(Boolean)),
+);
+
+const resolveCandidatePath = (candidate) =>
+  path.isAbsolute(candidate) ? candidate : path.resolve(process.cwd(), candidate);
+
+const loadedEnvFile = envCandidates.find((candidate) => {
+  const filePath = resolveCandidatePath(candidate);
+  if (!fs.existsSync(filePath)) {
+    return false;
+  }
+  dotenv.config({ path: filePath });
+  return true;
+});
+
+if (!loadedEnvFile && process.env.NODE_ENV !== 'production') {
+  console.warn(
+    `Environment file not found. Looked for ${envCandidates
+      .map((candidate) => resolveCandidatePath(candidate))
+      .join(', ')}, falling back to system environment variables.`,
+  );
 }
 
 const env = process.env.NODE_ENV || 'development';

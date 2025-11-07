@@ -20,19 +20,19 @@ const manualRecords = [
     taskType: 'research_budget_increase',
     llmName: 'Claude',
     version: 'v2025-11-03',
-    content: readManual('../llm/claude/manual.md'),
+    content: readManual('./seed/manuals/claude.md'),
   },
   {
     taskType: 'research_budget_increase',
     llmName: 'GPT',
     version: 'v2025-11-03',
-    content: readManual('../llm/gpt/manual.md'),
+    content: readManual('./seed/manuals/gpt.md'),
   },
   {
     taskType: 'research_budget_increase',
     llmName: 'Upstage',
     version: 'v2025-11-03',
-    content: readManual('../llm/upstage/manual.md'),
+    content: readManual('./seed/manuals/upstage.md'),
   },
 ];
 
@@ -64,7 +64,7 @@ const llms = [
   {
     identifier: 'upstage',
     displayName: 'Upstage',
-    model: 'solar-1-mini-chat',
+    model: 'solar-pro2',
     status: 'HEALTHY',
     avgLatencyMs: 0,
     approvalRate: 0.0,

@@ -1,3 +1,37 @@
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/+$/, '');
+console.log('API base URL:', import.meta.env.VITE_API_BASE_URL);
+
+const isRelativeBase =
+  API_BASE_URL && !/^https?:\/\//i.test(API_BASE_URL) && !API_BASE_URL.startsWith('//');
+
+const normalizePath = (path) => {
+  if (!path) {
+    return '/';
+  }
+
+  let normalized = path.startsWith('/') ? path : `/${path}`;
+
+  if (isRelativeBase) {
+    const baseSegment = API_BASE_URL.toLowerCase();
+    if (normalized.toLowerCase().startsWith(baseSegment)) {
+      const stripped = normalized.slice(API_BASE_URL.length);
+      normalized = stripped.startsWith('/') ? stripped : `/${stripped}`;
+    }
+  }
+
+  return normalized;
+};
+
+const buildUrl = (path) => {
+  if (!API_BASE_URL) {
+    return path;
+  }
+  if (path.startsWith('http://') || path.startsWith('https://')) {
+    return path;
+  }
+  return `${API_BASE_URL}${normalizePath(path)}`;
+};
+
 const buildHeaders = (headers = {}) => ({
   Accept: 'application/json',
   ...headers,
@@ -23,7 +57,7 @@ const handleResponse = async (response) => {
 };
 
 export const apiGet = async (path, options = {}) => {
-  const response = await fetch(path, {
+  const response = await fetch(buildUrl(path), {
     method: 'GET',
     headers: buildHeaders(options.headers),
   });
@@ -36,7 +70,7 @@ export const apiPost = async (path, body, options = {}) => {
     ...(options.headers || {}),
   });
 
-  const response = await fetch(path, {
+  const response = await fetch(buildUrl(path), {
     method: 'POST',
     headers,
     body: body !== undefined ? JSON.stringify(body) : undefined,

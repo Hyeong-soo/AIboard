@@ -143,9 +143,16 @@ const DecisionDetailModal = ({
                         <details className="modal__issues">
                           <summary>발견된 이슈 {approval.issues.length}건</summary>
                           <ul>
-                            {approval.issues.map((issue, index) => (
-                              <li key={index}>{issue}</li>
-                            ))}
+                            {approval.issues.map((issue, index) => {
+                              let content = issue;
+                              if (issue && typeof issue === 'object') {
+                                content =
+                                  issue.description ||
+                                  issue.issue ||
+                                  JSON.stringify(issue);
+                              }
+                              return <li key={index}>{content}</li>;
+                            })}
                           </ul>
                         </details>
                       )}
