@@ -1,4 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
+
+const MODAL_ANIMATION_DURATION = 320;
 
 const formatDateTime = (value) => {
   if (!value) return null;
@@ -11,18 +14,13 @@ const formatDateTime = (value) => {
   ).padStart(2, '0')}`;
 };
 
-const ManualEditorModal = ({
-  open,
-  llmName,
-  manual,
-  loading = false,
-  onClose,
-  onSubmit,
-}) => {
+const ManualEditorModal = ({ open, llmName, manual, loading = false, onClose, onSubmit }) => {
   const [draft, setDraft] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [hasEdited, setHasEdited] = useState(false);
+  const [visible, setVisible] = useState(open);
+  const [closing, setClosing] = useState(false);
 
   useEffect(() => {
     if (!open) {
@@ -72,7 +70,27 @@ const ManualEditorModal = ({
     return `${llmName} 매뉴얼을 수정합니다. 저장 즉시 다음 의결부터 반영됩니다.`;
   }, [llmName]);
 
-  if (!open) {
+  useEffect(() => {
+    let timer;
+    if (open) {
+      setVisible(true);
+      setClosing(false);
+    } else if (visible) {
+      setClosing(true);
+      timer = setTimeout(() => {
+        setVisible(false);
+        setClosing(false);
+      }, MODAL_ANIMATION_DURATION);
+    }
+
+    return () => {
+      if (timer) {
+        clearTimeout(timer);
+      }
+    };
+  }, [open, visible]);
+
+  if (!visible) {
     return null;
   }
 
@@ -124,9 +142,15 @@ const ManualEditorModal = ({
     }
   };
 
-  return (
-    <div className="modal-overlay" role="dialog" aria-modal="true">
-      <div className="modal manual-editor">
+  const overlayClass = closing ? 'modal-overlay modal-overlay--closing' : 'modal-overlay';
+  const modalClassNames = ['modal', 'manual-editor'];
+  if (closing) {
+    modalClassNames.push('modal--closing');
+  }
+
+  const modalContent = (
+    <div className={overlayClass} role="dialog" aria-modal="true">
+      <div className={modalClassNames.join(' ')}>
         <header className="modal__header">
           <div>
             <h3>{llmName ? `${llmName} 매뉴얼 편집` : 'LLM 매뉴얼 편집'}</h3>
@@ -192,6 +216,12 @@ const ManualEditorModal = ({
       </div>
     </div>
   );
+
+  if (typeof document === 'undefined') {
+    return modalContent;
+  }
+
+  return createPortal(modalContent, document.body);
 };
 
 export default ManualEditorModal;

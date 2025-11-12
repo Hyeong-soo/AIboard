@@ -1,4 +1,7 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
+
+const MODAL_ANIMATION_DURATION = 320;
 
 const formatDateTime = (value) => {
   if (!value) return '-';
@@ -30,6 +33,8 @@ const DecisionDetailModal = ({
   manualsLoading = false,
   onClose,
 }) => {
+  const [visible, setVisible] = useState(open);
+  const [closing, setClosing] = useState(false);
   useEffect(() => {
     if (!open) {
       return undefined;
@@ -47,7 +52,27 @@ const DecisionDetailModal = ({
     };
   }, [open, onClose]);
 
-  if (!open) {
+  useEffect(() => {
+    let timer;
+    if (open) {
+      setVisible(true);
+      setClosing(false);
+    } else if (visible) {
+      setClosing(true);
+      timer = setTimeout(() => {
+        setVisible(false);
+        setClosing(false);
+      }, MODAL_ANIMATION_DURATION);
+    }
+
+    return () => {
+      if (timer) {
+        clearTimeout(timer);
+      }
+    };
+  }, [open, visible]);
+
+  if (!visible) {
     return null;
   }
 
@@ -58,9 +83,15 @@ const DecisionDetailModal = ({
   const headerTitle = decision?.title || '의결 상세';
   const requesterLabel = decision?.requester || '신청자 정보 없음';
 
-  return (
-    <div className="modal-overlay" role="dialog" aria-modal="true">
-      <div className="modal">
+  const overlayClass = closing ? 'modal-overlay modal-overlay--closing' : 'modal-overlay';
+  const modalClassNames = ['modal'];
+  if (closing) {
+    modalClassNames.push('modal--closing');
+  }
+
+  const modalContent = (
+    <div className={overlayClass} role="dialog" aria-modal="true">
+      <div className={modalClassNames.join(' ')}>
         <header className="modal__header">
           <div>
             <h3>{headerTitle}</h3>
@@ -178,6 +209,12 @@ const DecisionDetailModal = ({
       </div>
     </div>
   );
+
+  if (typeof document === 'undefined') {
+    return modalContent;
+  }
+
+  return createPortal(modalContent, document.body);
 };
 
 export default DecisionDetailModal;

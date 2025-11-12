@@ -23,6 +23,7 @@ const App = () => {
 
   const [manuals, setManuals] = useState([]);
   const [manualsLoading, setManualsLoading] = useState(true);
+  const [lastSyncedAt, setLastSyncedAt] = useState(null);
 
   const [errorMessage, setErrorMessage] = useState(null);
 
@@ -49,6 +50,7 @@ const App = () => {
       setDecisions(decisionResult.items);
       setDecisionsTotal(decisionResult.total);
       setManuals(manualItems);
+      setLastSyncedAt(new Date());
     } catch (error) {
       console.error('[dashboard] Failed to load data', error);
       setErrorMessage(error.message || '대시보드 데이터를 불러오지 못했습니다.');
@@ -159,19 +161,166 @@ const App = () => {
     setSelectedDecisionId(null);
   };
 
+  const llmMetrics = useMemo(() => {
+    if (!llms.length) {
+      return { healthy: 0, degraded: 0, offline: 0, avgLatency: null };
+    }
+
+    const initial = {
+      healthy: 0,
+      degraded: 0,
+      offline: 0,
+      latencySum: 0,
+      latencyCount: 0,
+    };
+
+    const totals = llms.reduce((acc, item) => {
+      if (item.status === 'HEALTHY') acc.healthy += 1;
+      if (item.status === 'DEGRADED') acc.degraded += 1;
+      if (item.status === 'OFFLINE') acc.offline += 1;
+
+      if (typeof item.avgLatencyMs === 'number') {
+        acc.latencySum += item.avgLatencyMs;
+        acc.latencyCount += 1;
+      }
+
+      return acc;
+    }, initial);
+
+    return {
+      healthy: totals.healthy,
+      degraded: totals.degraded,
+      offline: totals.offline,
+      avgLatency:
+        totals.latencyCount > 0 ? Math.round(totals.latencySum / totals.latencyCount) : null,
+    };
+  }, [llms]);
+
+  const decisionMetrics = useMemo(() => {
+    if (!decisions.length) {
+      return {
+        approveCount: 0,
+        rejectCount: 0,
+        approvalRate: null,
+        contested: 0,
+        avgPanel: null,
+      };
+    }
+
+    const base = decisions.reduce(
+      (acc, decision) => {
+        if (decision.finalDecision === 'APPROVE') {
+          acc.approveCount += 1;
+        }
+        if (decision.finalDecision === 'REJECT') {
+          acc.rejectCount += 1;
+        }
+
+        const votes = Array.isArray(decision.approvals) ? decision.approvals : [];
+        const approveVotes = votes.filter((vote) => vote.decision === 'APPROVE').length;
+        const rejectVotes = votes.filter((vote) => vote.decision === 'REJECT').length;
+        if (approveVotes > 0 && rejectVotes > 0) {
+          acc.contested += 1;
+        }
+        acc.totalVotes += votes.length;
+        return acc;
+      },
+      {
+        approveCount: 0,
+        rejectCount: 0,
+        contested: 0,
+        totalVotes: 0,
+      },
+    );
+
+    const approvalRate = Math.round((base.approveCount / decisions.length) * 100);
+    const avgPanel = base.totalVotes > 0 ? Number((base.totalVotes / decisions.length).toFixed(1)) : null;
+
+    return {
+      approveCount: base.approveCount,
+      rejectCount: base.rejectCount,
+      contested: base.contested,
+      approvalRate,
+      avgPanel,
+    };
+  }, [decisions]);
+
+  const formattedSyncTime = useMemo(() => {
+    if (!lastSyncedAt) {
+      return 'N/A';
+    }
+
+    try {
+      return lastSyncedAt.toLocaleTimeString('ko-KR', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+      });
+    } catch (error) {
+      console.error('[dashboard] Failed to format sync time', error);
+      return 'N/A';
+    }
+  }, [lastSyncedAt]);
+
+  const activeAlerts = llmMetrics.degraded + llmMetrics.offline;
+
   const isModalOpen = selectedDecisionId !== null;
 
   return (
-    <div className="page">
+    <div className="page page--hud">
+      <div className="page__grid" aria-hidden="true" />
       <header className="page__header">
-        <div>
+        <div className="page__title-block">
+          <div className="page__signal">
+            <span className="page__signal-dot" />
+            <span>PROTOCOL LINK · HYPERION</span>
+          </div>
           <h1>AI 이사회 의결 현황</h1>
           <p className="page__subtitle">LLM 기반 자동 의결 시스템 모니터링 대시보드</p>
         </div>
-        <button className="refresh-button" type="button" onClick={loadDashboardData}>
-          새로고침
-        </button>
+        <div className="page__actions">
+          <span className="page__timestamp">LAST SYNC · {formattedSyncTime}</span>
+          <button className="refresh-button" type="button" onClick={loadDashboardData}>
+            새로고침
+          </button>
+        </div>
       </header>
+
+      <section className="hud-metrics" aria-label="실시간 운영 지표">
+        <article className="hud-metric">
+          <span className="hud-metric__label">ACTIVE MODELS</span>
+          <strong>{llmsLoading ? '--' : llms.length}</strong>
+          <span className="hud-metric__hint">
+            HEALTHY {llmMetrics.healthy} · DEG {llmMetrics.degraded}
+          </span>
+        </article>
+        <article className="hud-metric">
+          <span className="hud-metric__label">AVG LATENCY</span>
+          <strong>{llmMetrics.avgLatency !== null ? `${llmMetrics.avgLatency} ms` : '--'}</strong>
+          <span className="hud-metric__hint">모델 전체 기준</span>
+        </article>
+        <article className="hud-metric">
+          <span className="hud-metric__label">APPROVAL RATE</span>
+          <strong>
+            {decisionMetrics.approvalRate !== null ? `${decisionMetrics.approvalRate}%` : '--'}
+          </strong>
+          <span className="hud-metric__hint">
+            승인 {decisionMetrics.approveCount} · 반려 {decisionMetrics.rejectCount}
+          </span>
+        </article>
+        <article className="hud-metric">
+          <span className="hud-metric__label">AVG PANEL SIZE</span>
+          <strong>{decisionMetrics.avgPanel !== null ? decisionMetrics.avgPanel : '--'}</strong>
+          <span className="hud-metric__hint">의결당 참여 LLM</span>
+        </article>
+        <article className="hud-metric">
+          <span className="hud-metric__label">ALERT STATE</span>
+          <strong className={activeAlerts > 0 ? 'hud-metric__critical' : undefined}>
+            {llmsLoading ? '--' : activeAlerts}
+          </strong>
+          <span className="hud-metric__hint">OFFLINE {llmMetrics.offline}</span>
+        </article>
+      </section>
 
       {errorMessage && <div className="alert alert--error">{errorMessage}</div>}
 
