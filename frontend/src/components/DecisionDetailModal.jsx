@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
+import useScrollLock from '../hooks/useScrollLock.js';
+import useModalDrag from '../hooks/useModalDrag.js';
 
 const MODAL_ANIMATION_DURATION = 320;
 
@@ -72,6 +74,16 @@ const DecisionDetailModal = ({
     };
   }, [open, visible]);
 
+  useScrollLock(visible);
+  const { dragStyle, handlePointerDown, isDragging } = useModalDrag(visible);
+
+  const handleHeaderPointerDown = (event) => {
+    if (event.target.closest('button')) {
+      return;
+    }
+    handlePointerDown(event);
+  };
+
   if (!visible) {
     return null;
   }
@@ -89,123 +101,131 @@ const DecisionDetailModal = ({
     modalClassNames.push('modal--closing');
   }
 
+  const shellClasses = ['modal-shell'];
+  if (isDragging) {
+    shellClasses.push('modal-shell--dragging');
+  }
+
   const modalContent = (
     <div className={overlayClass} role="dialog" aria-modal="true">
-      <div className={modalClassNames.join(' ')}>
-        <header className="modal__header">
-          <div>
-            <h3>{headerTitle}</h3>
-            <p className="modal__subtitle">
-              {decision
-                ? `${decision.reference} · 신청자 ${requesterLabel} · ${formatDateTime(
-                    decision.submittedAt,
-                  )}`
-                : '상세 정보를 불러오는 중...'}
-            </p>
-          </div>
-          <button className="modal__close" type="button" onClick={onClose} aria-label="닫기">
-            ×
-          </button>
-        </header>
+      <div className={shellClasses.join(' ')} style={dragStyle}>
+        <div className={modalClassNames.join(' ')}>
+          <header className="modal__header" onPointerDown={handleHeaderPointerDown}>
+            <div>
+              <h3>{headerTitle}</h3>
+              <p className="modal__subtitle">
+                {decision
+                  ? `${decision.reference} · 신청자 ${requesterLabel} · ${formatDateTime(
+                      decision.submittedAt,
+                    )}`
+                  : '상세 정보를 불러오는 중...'}
+              </p>
+            </div>
+            <button className="modal__close" type="button" onClick={onClose} aria-label="닫기">
+              ×
+            </button>
+          </header>
 
-        {loading && (
-          <section className="modal__section">
-            <p className="modal__loading">LLM 의결 결과를 불러오는 중입니다...</p>
-          </section>
-        )}
-
-        {error && (
-          <section className="modal__section">
-            <div className="alert alert--error">{error}</div>
-          </section>
-        )}
-
-        {decision && (
-          <>
+          {loading && (
             <section className="modal__section">
-              <h4>요약</h4>
-              <p>{decision.summary}</p>
+              <p className="modal__loading">LLM 의결 결과를 불러오는 중입니다...</p>
             </section>
+          )}
 
+          {error && (
             <section className="modal__section">
-              <div className="modal__stats">
-                <div className="modal__stat">
-                  <span className="modal__stat-label">최종 결정</span>
-                  <span className={`badge badge--${decision.finalDecision.toLowerCase()}`}>
-                    {decision.finalDecision}
-                  </span>
-                </div>
-                <div className="modal__stat">
-                  <span className="modal__stat-label">Approve</span>
-                  <strong>{approveCount}</strong>
-                </div>
-                <div className="modal__stat">
-                  <span className="modal__stat-label">Reject</span>
-                  <strong>{rejectCount}</strong>
-                </div>
-              </div>
+              <div className="alert alert--error">{error}</div>
             </section>
+          )}
 
-            <section className="modal__section">
-              <h4>LLM 검토 상세</h4>
-              {manualsLoading && (
-                <p className="modal__manual-loading">검토 매뉴얼 정보를 불러오는 중입니다...</p>
-              )}
-              <ul className="modal__approvals">
-                {decision.approvals.map((approval) => {
-                  const manual = manualsByLlm[approval.llmName];
-                  const share = approval.share;
-                  return (
-                    <li key={`${approval.llmName}-${approval.id ?? ''}`} className="modal__approval">
-                      <header>
-                        <h5>{approval.llmName}</h5>
-                        <span className={`badge badge--${approval.decision.toLowerCase()}`}>
-                          {approval.decision}
-                        </span>
-                      </header>
-                      <p>{approval.summary}</p>
-                      <div className="modal__approval-meta">
-                        <span>
-                          신뢰도 <strong>{formatConfidence(approval.confidence)}</strong>
-                        </span>
-                        <span>처리 시간 {formatDuration(approval.durationMs)}</span>
-                      </div>
-                      {approval.issues?.length > 0 && (
-                        <details className="modal__issues">
-                          <summary>발견된 이슈 {approval.issues.length}건</summary>
-                          <ul>
-                            {approval.issues.map((issue, index) => {
-                              let content = issue;
-                              if (issue && typeof issue === 'object') {
-                                content =
-                                  issue.description ||
-                                  issue.issue ||
-                                  JSON.stringify(issue);
-                              }
-                              return <li key={index}>{content}</li>;
-                            })}
-                          </ul>
-                        </details>
-                      )}
-                      {manual && (
-                        <details className="modal__manual">
-                          <summary>LLM 전용 매뉴얼</summary>
-                          <pre>{manual.content}</pre>
-                        </details>
-                      )}
-                      {share?.x && share?.y && (
-                        <details className="modal__share">
-                          <summary>복구용 부분키</summary>
-                          <pre>{`x: ${share.x}\ny: ${share.y}`}</pre>
-                        </details>
-                      )}
-                    </li>
-                  );
-                })}
-              </ul>
-            </section>
-          </>
-        )}
+          {decision && (
+            <>
+              <section className="modal__section">
+                <h4>요약</h4>
+                <p>{decision.summary}</p>
+              </section>
+
+              <section className="modal__section">
+                <div className="modal__stats">
+                  <div className="modal__stat">
+                    <span className="modal__stat-label">최종 결정</span>
+                    <span className={`badge badge--${decision.finalDecision.toLowerCase()}`}>
+                      {decision.finalDecision}
+                    </span>
+                  </div>
+                  <div className="modal__stat">
+                    <span className="modal__stat-label">Approve</span>
+                    <strong>{approveCount}</strong>
+                  </div>
+                  <div className="modal__stat">
+                    <span className="modal__stat-label">Reject</span>
+                    <strong>{rejectCount}</strong>
+                  </div>
+                </div>
+              </section>
+
+              <section className="modal__section">
+                <h4>LLM 검토 상세</h4>
+                {manualsLoading && (
+                  <p className="modal__manual-loading">검토 매뉴얼 정보를 불러오는 중입니다...</p>
+                )}
+                <ul className="modal__approvals">
+                  {decision.approvals.map((approval) => {
+                    const manual = manualsByLlm[approval.llmName];
+                    const share = approval.share;
+                    return (
+                      <li
+                        key={`${approval.llmName}-${approval.id ?? ''}`}
+                        className="modal__approval"
+                      >
+                        <header>
+                          <h5>{approval.llmName}</h5>
+                          <span className={`badge badge--${approval.decision.toLowerCase()}`}>
+                            {approval.decision}
+                          </span>
+                        </header>
+                        <p>{approval.summary}</p>
+                        <div className="modal__approval-meta">
+                          <span>
+                            신뢰도 <strong>{formatConfidence(approval.confidence)}</strong>
+                          </span>
+                          <span>처리 시간 {formatDuration(approval.durationMs)}</span>
+                        </div>
+                        {approval.issues?.length > 0 && (
+                          <details className="modal__issues">
+                            <summary>발견된 이슈 {approval.issues.length}건</summary>
+                            <ul>
+                              {approval.issues.map((issue, index) => {
+                                let content = issue;
+                                if (issue && typeof issue === 'object') {
+                                  content =
+                                    issue.description || issue.issue || JSON.stringify(issue);
+                                }
+                                return <li key={index}>{content}</li>;
+                              })}
+                            </ul>
+                          </details>
+                        )}
+                        {manual && (
+                          <details className="modal__manual">
+                            <summary>LLM 전용 매뉴얼</summary>
+                            <pre>{manual.content}</pre>
+                          </details>
+                        )}
+                        {share?.x && share?.y && (
+                          <details className="modal__share">
+                            <summary>복구용 부분키</summary>
+                            <pre>{`x: ${share.x}\ny: ${share.y}`}</pre>
+                          </details>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </section>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

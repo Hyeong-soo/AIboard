@@ -10,6 +10,8 @@ import {
   fetchManuals,
   saveManual,
 } from './api/dashboard.js';
+import rotatingAiPoster from './assets/rotating_ai.avif';
+import rotatingAiWebm from './assets/rotating_ai.webm';
 
 const DEFAULT_TASK_TYPE = 'research_budget_increase';
 
@@ -285,6 +287,45 @@ const App = () => {
           </button>
         </div>
       </header>
+
+      <section className="hud-holo" aria-label="AI 코어 시각화">
+        <div className="hud-holo__grid" role="presentation">
+          <video
+            className="hud-holo__image"
+            autoPlay
+            loop
+            muted
+            playsInline
+            poster={rotatingAiPoster}
+            aria-label="AI hologram"
+          >
+            <source src={rotatingAiWebm} type="video/webm" />
+            <img src={rotatingAiPoster} alt="AI hologram" />
+          </video>
+          <span className="hud-holo__ring hud-holo__ring--outer" aria-hidden="true" />
+          <span className="hud-holo__ring hud-holo__ring--inner" aria-hidden="true" />
+          <span className="hud-holo__pulse" aria-hidden="true" />
+        </div>
+        <div className="hud-holo__meta">
+          <div>
+            <span className="hud-holo__meta-label">CORE STATUS</span>
+            <strong>{llmsLoading ? 'SYNCHRONIZING' : 'ONLINE'}</strong>
+            <small>LLM CLUSTER</small>
+          </div>
+          <div>
+            <span className="hud-holo__meta-label">COUNCIL LOAD</span>
+            <strong>
+              {decisionsLoading ? '--' : `${Math.min(decisionsTotal, 999).toString().padStart(3, '0')}`}
+            </strong>
+            <small>TOTAL DECISIONS</small>
+          </div>
+          <div>
+            <span className="hud-holo__meta-label">LATENCY</span>
+            <strong>{llmMetrics.avgLatency !== null ? `${llmMetrics.avgLatency} MS` : '--'}</strong>
+            <small>AVG RESPONSE</small>
+          </div>
+        </div>
+      </section>
 
       <section className="hud-metrics" aria-label="실시간 운영 지표">
         <article className="hud-metric">
